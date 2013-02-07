@@ -1,6 +1,20 @@
 import java.io.*;
 
-class Neuron
+interface NeuronInterface
+{
+	String serializeWightsToString();
+	void initWithString(String stringOfWeights);
+	void print();
+}
+
+interface NeuralNetworkInterface
+{
+	void print();
+	void saveToFile() throws IOException;
+	void loadFromFile() throws IOException;
+}
+
+class Neuron implements NeuronInterface
 {
 	private double w[];
 
@@ -25,7 +39,8 @@ class Neuron
 			}
 	}
 
-	public Neuron() {
+	public Neuron()
+	{
 		w = new double[8];
 		for (int idx = 0; idx < w.length; idx++)
 		{
@@ -33,7 +48,8 @@ class Neuron
 		}
 	}
 
-	public void print() {
+	public void print()
+	{
 		for (int idx = 0; idx < w.length; idx++)
 		{
 			System.out.printf("%f ", w[idx]);			
@@ -42,7 +58,7 @@ class Neuron
 	}
 }
 
-class NeuralNetwork
+class NeuralNetwork implements NeuralNetworkInterface
 {	
 	private Neuron n[];
 	public NeuralNetwork()
