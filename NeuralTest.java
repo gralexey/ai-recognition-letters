@@ -1,6 +1,29 @@
+import java.io.*;
+
 class Neuron
 {
 	private double w[];
+
+	public String serializeWightsToString()
+	{
+		String result = new String();
+		for (int wIdx = 0; wIdx < w.length; wIdx++)
+		{
+			result = result.concat(String.valueOf(w[wIdx]) + " ");
+		}
+
+		return result;		
+	}
+
+	public void initWithString(String stringOfWeights)
+	{
+		String[] stringsSplittedbySpace = stringOfWeights.split(" ");
+			for(int idx = 0; idx < stringsSplittedbySpace.length; idx++)
+			{
+				double theWeight = Double.parseDouble(stringsSplittedbySpace[idx]);
+				w[idx] = theWeight;
+			}
+	}
 
 	public Neuron() {
 		w = new double[8];
@@ -44,13 +67,55 @@ class NeuralNetwork
 			theN.print();
 		}
 	}
+
+	public void saveToFile() throws IOException
+	{
+		File file = new File("nn.txt");
+		if (!file.exists())
+		{
+			file.createNewFile();
+		}
+
+		FileOutputStream fileOut = new FileOutputStream(file);
+		PrintStream printStream = new PrintStream(fileOut);
+
+		for (int nIdx = 0; nIdx < n.length; nIdx++)
+		{
+			Neuron theNeuron = n[nIdx];	
+			printStream.printf("%s\n", theNeuron.serializeWightsToString());			
+		}			
+		fileOut.close(); 
+	}
+
+	public void loadFromFile() throws IOException
+	{
+		File file = new File("nn.txt");
+		if (!file.exists())
+		{
+			System.out.printf("file doesn't exists\n");
+			return;
+		}
+
+		FileInputStream fileIn = new FileInputStream(file);
+		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileIn));
+		String stringOfWeights;
+		int nIdx = 0;
+		while((stringOfWeights = bufferedReader.readLine()) != null)
+		{
+			if (stringOfWeights.length() == 0)	{ break; }	
+			n[nIdx++].initWithString(stringOfWeights);
+		}
+	}
 }
 
-class NeuralTest
+class NeuralTest 
 {
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{		
 		NeuralNetwork nn = new NeuralNetwork();
+		//nn.print();
+		//nn.saveToFile();
+		nn.loadFromFile();
 		nn.print();
 	}
 }
