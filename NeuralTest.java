@@ -5,6 +5,7 @@ interface NeuronInterface
 {
 	String serializeWightsToString();
 	void initWithString(String stringOfWeights);
+	void initWithMathRandom();
 	void print();
 }
 
@@ -13,6 +14,7 @@ interface NeuralNetworkInterface
 	void print();
 	void saveToFile() throws IOException;
 	void loadFromFile() throws IOException;
+	void initWithMathRandom();
 	void readImage(String imageName) throws IOException;
 }
 
@@ -41,9 +43,14 @@ class Neuron implements NeuronInterface
 			}
 	}
 
-	public Neuron()
+	public Neuron(int n)
 	{
-		weights = new double[8];
+		weights = new double[n];
+		
+	}
+
+	public void initWithMathRandom()
+	{
 		for (int idx = 0; idx < weights.length; idx++)
 		{
 			weights[idx] = Math.random();
@@ -63,14 +70,21 @@ class Neuron implements NeuronInterface
 class NeuralNetwork implements NeuralNetworkInterface
 {	
 	private Neuron neurons[];
-	private static int N = 30;
-	private static int M = 26;
-	public NeuralNetwork()
+
+	public NeuralNetwork(int m, int n)
 	{
-		neurons = new Neuron[5];
+		neurons = new Neuron[m];
 		for (int idx = 0; idx < neurons.length; idx++)
 		{
-			neurons[idx] = new Neuron();
+			neurons[idx] = new Neuron(n);			
+		}
+	}
+
+	public void initWithMathRandom()
+	{
+		for (int idx = 0; idx < neurons.length; idx++)
+		{
+			neurons[idx].initWithMathRandom();			
 		}
 	}
 
@@ -159,12 +173,13 @@ class NeuralTest
 {
 	public static void main(String[] args) throws IOException
 	{		
-		NeuralNetwork nn = new NeuralNetwork();
+		NeuralNetwork nn = new NeuralNetwork(26, 10);
+		//nn.initWithMathRandom();
 		//nn.print();
 		//nn.saveToFile();
-		//nn.loadFromFile();
-		//nn.print();
-		nn.readImage("test.bmp");
+		nn.loadFromFile();
+		nn.print();
+		//nn.readImage("test.bmp");
 
 	}
 }
