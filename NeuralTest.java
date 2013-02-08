@@ -17,7 +17,9 @@ interface NeuralNetworkInterface
 	void saveToFile() throws IOException;
 	void loadFromFile() throws IOException;
 	void initWithMathRandom();
-	void readImage(String imageName) throws IOException;
+	void tuneNeuronIdxToBufferedImage(int targetNueronIdx);
+	int evaluateNeuronsWithBufferImage();
+	void bufferImage(String imageName) throws IOException;
 }
 
 class Utilities
@@ -150,15 +152,15 @@ class Neuron implements NeuronInterface
 	public void tuneToVector(double[] vector)
 	{
 		double[] diffVector = Utilities.substructVectors(vector, weights);
-		double[] nVector = Utilities.multiplyVectorsOnScalar(diffVector, beta);
-		
-		Utilities.printVector(nVector);
+		double[] nVector = Utilities.multiplyVectorsOnScalar(diffVector, beta);		
+		weights = Utilities.sumVectors(weights, nVector);
 	}
 }
 
 class NeuralNetwork implements NeuralNetworkInterface
 {	
 	private Neuron neurons[];
+	private double[] vector;
 
 	public NeuralNetwork(int m, int n)
 	{
@@ -230,7 +232,13 @@ class NeuralNetwork implements NeuralNetworkInterface
 		}
 	}
 
-	public void readImage(String imageName) throws IOException
+	public void tuneNeuronIdxToBufferedImage(int targetNueronIdx)
+	{
+		neurons[targetNueronIdx].tuneToVector(vector);
+		System.out.printf("now %d neuron is (%f)", targetNueronIdx, neurons[targetNueronIdx].evaluate(vector));	
+	}
+
+	public void bufferImage(String imageName) throws IOException
 	{
 		InputStream in = new FileInputStream(imageName);
 		BmpImage bmp;
@@ -247,7 +255,7 @@ class NeuralNetwork implements NeuralNetworkInterface
 
 		//System.out.printf("width: %d\nheight: %d\n", bmpWidth, bmpHeight);
 
-		double[] vector = new double[bmpWidth * bmpHeight];
+		vector = new double[bmpWidth * bmpHeight];
 
 		for (int i = 0; i < bmpHeight; i++)
 		{
@@ -255,31 +263,62 @@ class NeuralNetwork implements NeuralNetworkInterface
 			{
 				int idx = i * bmpWidth + j;
 				vector[idx] = bmp.image.getRgb888Pixel(j, i);
-				System.out.printf("%6x ", bmp.image.getRgb888Pixel(j, i));
+				//System.out.printf("%6x ", bmp.image.getRgb888Pixel(j, i));
 			}
-			System.out.printf("\n");
+			//System.out.printf("\n");
 		}
+	}
+
+	public int evaluateNeuronsWithBufferImage()
+	{
+		double max = 0;
+		int winnerIdx = -1;
 
 		for (int nIdx = 0; nIdx < neurons.length; nIdx++)
 		{
-			//double eval = neurons[nIdx].evaluate(vector);
+			double eval = neurons[nIdx].evaluate(vector);
+			if (eval > max)
+			{
+				max = eval;
+				winnerIdx = nIdx;
+			}
 			//System.out.printf("%d neuron evaluate vector as %f\n", nIdx, eval);			
 		}
-
-		neurons[0].tuneToVector(vector);	
+		System.out.printf("stronger neuron: %d (%f)\n", winnerIdx, max);
+		return winnerIdx;
 	}
 }
 
 class NeuralTest 
 {
 	public static void main(String[] args) throws IOException
-	{		
+	{	
+		String fileName;
+		if (args.length > 0)
+		{
+			fileName = args[0];
+		}
+		else
+		{
+			fileName = "test.bmp";
+		}
+		System.out.println(fileName);
+
 		NeuralNetwork nn = new NeuralNetwork(26, 300);
 		//nn.initWithMathRandom();
-		//nn.print();
-		//nn.saveToFile();
 		nn.loadFromFile();
-		//nn.print();
-		nn.readImage("test.bmp");
+		nn.bufferImage(fileName);
+
+		if (args.length == 2)
+		{			
+			int targetNeuron = Integer.parseInt(args[1]);
+			nn.tuneNeuronIdxToBufferedImage(targetNeuron);
+			nn.saveToFile();
+			System.out.printf("%d neuron tuned to image\n", targetNeuron);
+		}
+		else if (args.length == 1)
+		{
+			nn.evaluateNeuronsWithBufferImage();
+		}		
 	}
 }
