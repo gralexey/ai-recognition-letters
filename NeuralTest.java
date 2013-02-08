@@ -22,6 +22,7 @@ interface NeuralNetworkInterface
 	int evaluateNeuronsWithBufferImage();
 	void bufferImage(String imageName) throws IOException;
 	void dumpNeuronAsBmp(int nIdx, String fileName, int width, int height) throws IOException;
+	void dumpAllNeurons(int width, int height) throws IOException;
 }
 
 class Utilities
@@ -83,6 +84,13 @@ class Utilities
 			System.out.printf("%f, ", vector[idx]);
 		}
 		System.out.printf("\n");
+	}
+
+	public static int getRgbPixelWithIntensity(double intensity)
+	{
+		int intensityValueFrom0to255 = (int)intensity >> 16;
+		int intensityValue = intensityValueFrom0to255 | intensityValueFrom0to255 << 8 | intensityValueFrom0to255 << 16;
+		return 0xffffff - intensityValue;
 	}
 }
 
@@ -174,8 +182,8 @@ class Neuron implements NeuronInterface
 		{
 			int x = wIdx % width;
 			int y = wIdx / width;
-
-			bufferedRgb888Image.setRgb888Pixel(x, y, (int)weights[wIdx]);
+			int intensityPixel = Utilities.getRgbPixelWithIntensity(weights[wIdx]);
+			bufferedRgb888Image.setRgb888Pixel(x, y, intensityPixel);
 		}		
 
 		BmpImage bmpImage = new BmpImage();
@@ -289,8 +297,13 @@ class NeuralNetwork implements NeuralNetworkInterface
 			for (int x = 0; x < bmpWidth; x++)
 			{
 				int idx = y * bmpWidth + x;
-				vector[idx] = bmp.image.getRgb888Pixel(x, y);
-				//System.out.printf("%6x ", bmp.image.getRgb888Pixel(j, i));
+				int pixel = 0xffffff - bmp.image.getRgb888Pixel(x, y);
+				if (pixel < 0xffffff)
+				{
+					pixel = 0;
+				}
+				vector[idx] = pixel;
+				//System.out.printf("%6x ", pixel);
 			}
 			//System.out.printf("\n");
 		}
@@ -320,6 +333,14 @@ class NeuralNetwork implements NeuralNetworkInterface
 		Neuron theNeuron = neurons[nIdx];
 		theNeuron.dumpNeuronAsBmp(fileName, width, height);
 	}
+
+	public void dumpAllNeurons(int width, int height) throws IOException
+	{
+		for (int nIdx = 0; nIdx < neurons.length; nIdx++)
+		{
+			neurons[nIdx].dumpNeuronAsBmp("n" + nIdx + ".bmp", width, height);
+		}
+	}
 }
 
 class NeuralTest 
@@ -335,10 +356,11 @@ class NeuralTest
 		{
 			fileName = "test.bmp";
 		}
-		System.out.println(fileName);
 
-		NeuralNetwork nn = new NeuralNetwork(26, 300);
+		NeuralNetwork nn = new NeuralNetwork(4, 300);
 		//nn.initWithMathRandom();
+		//nn.saveToFile();
+
 		nn.loadFromFile();
 		nn.bufferImage(fileName);
 
@@ -348,15 +370,11 @@ class NeuralTest
 			nn.tuneNeuronIdxToBufferedImage(targetNeuron);
 			nn.saveToFile();
 			System.out.printf("%d neuron tuned to image\n", targetNeuron);
+			nn.dumpAllNeurons(15, 20);
 		}
 		else if (args.length == 1)
 		{
 			nn.evaluateNeuronsWithBufferImage();
-		}
-
-		nn.dumpNeuronAsBmp(0, "n0.bmp", 15, 20);
-		nn.dumpNeuronAsBmp(1, "n1.bmp", 15, 20);
-		nn.dumpNeuronAsBmp(2, "n2.bmp", 15, 20);
-		nn.dumpNeuronAsBmp(3, "n3.bmp", 15, 20);		
+		}				
 	}
 }
